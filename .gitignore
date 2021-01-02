@@ -1,0 +1,5 @@
+*._*
+test
+.DS*
+*.swo
+utils.pyc
