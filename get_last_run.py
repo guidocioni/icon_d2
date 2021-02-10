@@ -136,17 +136,20 @@ def get_most_recent_run(run=None, vars_2d=None, vars_3d=['t'],
     yesterday_string = (datetime.today() -
                         timedelta(days=1)).strftime('%Y%m%d')
     if run is None:
-        runs = ['00', '12']
+        runs = ['00', '03', '06', '09', '12', '15', '18', '21']
     else:
         runs = [run]
     temp = []
     for date_string in [yesterday_string, today_string]:
         for run_string in runs:
-            temp.append(find_file_name(vars_2d=vars_2d,
+            try:
+                temp.append(find_file_name(vars_2d=vars_2d,
                                        vars_3d=vars_3d,
                                        levels_3d=levels_3d,
                                        date_string=date_string,
                                        run_string=run_string))
+            except:
+                continue
     final = pd.concat(temp)
     sel_run = final.loc[final.status == 'all files available', 'run'].max()
     return final, sel_run

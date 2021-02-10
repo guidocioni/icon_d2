@@ -3,7 +3,8 @@ from multiprocessing import Pool
 from functools import partial
 from utils import *
 import sys
-from computations import compute_snow_change
+from computations import compute_geopot_height
+from matplotlib import patheffects
 
 debug = False
 if not debug:
@@ -11,11 +12,9 @@ if not debug:
     matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
-from matplotlib.colors import from_levels_and_colors
-import seaborn as sns
 
 # The one employed for the figure name when exported 
-variable_name = 'hsnow'
+variable_name = 'gph_t_500'
 
 print_message('Starting script to plot '+variable_name)
 
@@ -32,41 +31,33 @@ else:
 def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
-    dset = read_dataset(variables=['h_snow', 'snowlmt'],
+    dset = read_dataset(variables=['t', 'fi'], level=[50000, 85000],
                         projection=projection)
-    dset['sde'].metpy.convert_units('cm')
-    dset['SNOWLMT'].metpy.convert_units('m')
 
-    dset = compute_snow_change(dset)
+    dset = compute_geopot_height(dset, zvar='z', level=50000)
+    dset = dset.sel(plev=50000, method='nearest')
 
-    levels_hsnow = (-50, -40, -30, -20, -10, -5, -2.5, -2, -1, -0.5,
-                    0, 0.5, 1, 2, 2.5, 5, 10, 20, 30, 40, 50)
-    levels_snowlmt = np.arange(0., 3000., 500.)
+    levels_temp = np.arange(-58, 12, 2)
+    levels_gph = np.arange(4700., 6000., 70.)
 
-    cmap, norm = from_levels_and_colors(levels_hsnow, 
-                                        sns.color_palette("PuOr", 
-                                                          n_colors=len(levels_hsnow) + 1),
-                                        extend='both')
+    cmap = get_colormap('temp_meteociel')
 
     _ = plt.figure(figsize=(figsize_x, figsize_y))
 
-    ax = plt.gca()        
+    ax  = plt.gca()
     # Get coordinates from dataset
     m, x, y = get_projection(dset, projection, labels=True)
-    #m.fillcontinents(color='lightgray',lake_color='whitesmoke', zorder=0)
-    m.arcgisimage(service='World_Shaded_Relief', xpixels = 1500)
 
-    dset = dset.drop(['lon', 'lat', 'sde']).load()
+    dset = dset.drop(['lon', 'lat', 'z']).load()
 
     # All the arguments that need to be passed to the plotting function
-    args = dict(m=m, x=x, y=y, ax=ax, cmap=cmap, norm=norm,
-                 levels_hsnow=levels_hsnow,
-                 levels_snowlmt=levels_snowlmt, time=dset.time)
-
+    args = dict(x=x, y=y, ax=ax, cmap=cmap,
+                levels_temp=levels_temp,
+                levels_gph=levels_gph, time=dset.time)
 
     print_message('Pre-processing finished, launching plotting scripts')
     if debug:
-        plot_files(dset.isel(time=slice(-2, -1)), **args)
+        plot_files(dset.isel(time=slice(0, 2)), **args)
     else:
         # Parallelize the plotting by dividing into chunks and processes 
         dss = chunks_dataset(dset, chunks_size)
@@ -80,52 +71,62 @@ def plot_files(dss, **args):
     first = True
     for time_sel in dss.time:
         data = dss.sel(time=time_sel)
+        data['t'].metpy.convert_units('degC')
         time, run, cum_hour = get_time_run_cum(data)
         # Build the name of the output image
         filename = subfolder_images[projection] + '/' + variable_name + '_%s.png' % cum_hour
 
         cs = args['ax'].contourf(args['x'], args['y'],
-                                 data['snow_increment'],
+                                 data['t'], 
                                  extend='both', 
                                  cmap=args['cmap'],
-                                 norm=args['norm'],
-                                 levels=args['levels_hsnow'])
+                                 levels=args['levels_temp'])
+
 
         css = args['ax'].contour(args['x'], args['y'],
-                                 data['snow_increment'],
-                                 levels=args['levels_hsnow'],
-                                 colors='gray',
-                                 linewidths=0.2)
+                                 data['t'], colors='gray',
+                                 levels=np.arange(-56., 10., 4.),
+                                 linestyles='solid',
+                                 linewidths=0.3)
 
-        labels2 = args['ax'].clabel(css, css.levels,
-            inline=True, fmt='%4.0f', fontsize=6)
+        css.collections[7].set_linewidth(1.5)
 
         c = args['ax'].contour(args['x'], args['y'],
-                               data['SNOWLMT'],
-                               levels=args['levels_snowlmt'],
-                               colors='red', linewidths=0.5)
+                               data['geop'], 
+                               levels=args['levels_gph'],
+                               colors='white', 
+                               linewidths=1.)
 
-        labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)
+        labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f', 
+                                   fontsize=6)
+
+        labels2 = args['ax'].clabel(
+            css, css.levels, inline=True, fmt='%4.0f', fontsize=7)
+        plt.setp(labels2, path_effects=[
+            patheffects.withStroke(linewidth=0.5, foreground="w")])
+
+        maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
+                                        'max', 80, symbol='H', color='royalblue', random=True)
+        minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
+                                        'min', 80, symbol='L', color='coral', random=True)
 
         an_fc = annotation_forecast(args['ax'], time)
-        an_var = annotation(args['ax'],
-            'Snow depth change [cm] since run beginning and snow limit [m]',
-            loc='lower left', fontsize=6)
+        an_var = annotation(args['ax'], 
+            'Geopotential height @500hPa [m] and temperature @500hPa',
+             loc='lower left', fontsize=6)
         an_run = annotation_run(args['ax'], run)
         logo = add_logo_on_map(ax=args['ax'],
                                 zoom=0.1, pos=(0.95, 0.08))
 
         if first:
-            cb = plt.colorbar(cs, orientation='horizontal', label='Snow depth change [m]',
-                pad=0.038, fraction=0.035, ticks=args['levels_hsnow'][::2])
-            cb.ax.tick_params(labelsize=7)
+            plt.colorbar(cs, orientation='horizontal', label='Temperature [C]', pad=0.03, fraction=0.04)
 
         if debug:
             plt.show(block=True)
         else:
             plt.savefig(filename, **options_savefig)        
 
-        remove_collections([c, cs, css, labels, labels2, an_fc, an_var, an_run, logo])
+        remove_collections([c, cs, css, labels, labels2, an_fc, an_var, an_run, maxlabels, minlabels, logo])
 
         first = False 
 
@@ -136,4 +137,3 @@ if __name__ == "__main__":
     main()
     elapsed_time=time.time()-start_time
     print_message("script took " + time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
-

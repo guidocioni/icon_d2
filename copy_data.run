@@ -12,9 +12,9 @@ export MODEL_DATA_FOLDER="/tmp/icon-d2/"
 export HOME_FOLDER=$(pwd)
 export N_CONCUR_PROCESSES=8
 export NCFTP_BOOKMARK="altervista"
-DATA_DOWNLOAD=false
+DATA_DOWNLOAD=true
 DATA_PLOTTING=true
-DATA_UPLOAD=false
+DATA_UPLOAD=true
 
 ##### LOAD functions to download model data
 . ./functions_download_dwd.sh
@@ -39,6 +39,8 @@ export year=${latest_run:0:4}
 export month=${latest_run:4:2} 
 export day=${latest_run:6:2} 
 export run=${latest_run:8:2}
+
+echo "Processing run ${latest_run}"
 
 ###########################################
 
@@ -85,15 +87,15 @@ if [ "$DATA_PLOTTING" = true ]; then
 
 	export QT_QPA_PLATFORM=offscreen # Needed to avoid errors when using Python without display
 
-	python plot_meteogram.py Hamburg Pisa Milano Brocken Toulouse Utrecht
+	python plot_meteogram.py Hamburg Pisa Milano Utrecht
 
 	scripts=("plot_cape.py" "plot_hsnow.py" "plot_pres_t2m_winds10m.py" "plot_rain_clouds.py" "plot_rain_acc.py"\
-		     "plot_reflectivity.py" "plot_relhum.py" "plot_t.py" "plot_t850_pres.py" "plot_winds10m.py"\
-		     "plot_winter.py" "plot_tmax.py")
+		     "plot_winds10m.py" "plot_gph_500_mslp.py" "plot_gph_t_500.py" "plot_gph_t_850.py" "plot_sat.py"\
+		     "plot_winter.py" "plot_tmax.py" "plot_tmin.py")
 
 	projections=("de" "it" "nord")
 
-	parallel -j 5 python ::: "${scripts[@]}" ::: "${projections[@]}"
+	parallel -j 5 --delay 1 python ::: "${scripts[@]}" ::: "${projections[@]}"
 	rm ${MODEL_DATA_FOLDER}*.py
 fi
 
@@ -108,7 +110,7 @@ N_NETCDF_FILES=`find . -type f -name '*.nc' -printf x | wc -c`
 N_IMAGES=`find . -type f -name '*.png' -printf x | wc -c`
 
 if [ $N_NETCDF_FILES -ge 2 ] && [ $N_IMAGES -ge 10 ]; then
-	echo $year$month$day$run > last_processed_run.txt
+	echo ${latest_run} > last_processed_run.txt
 fi
 
 
@@ -119,24 +121,24 @@ if [ "$DATA_UPLOAD" = true ]; then
 	echo "icon-d2: Starting FTP uploading - `date`"
 	echo "-----------------------------------------------------------------------------------------"
 	# First upload meteograms
-	ncftpput -R -v -DD -m ${NCFTP_BOOKMARK} cosmo_de_forecasts/meteograms meteogram_*
+	ncftpput -R -v -DD -m ${NCFTP_BOOKMARK} icon_d2/meteograms meteogram_*
 	#
 	# Then upload the other pictures
 	#
-	images_output=("cape_cin" "radar" "t850_pres" "t_v_pres" "winds10m" "precip_clouds"\
-		"hsnow" "rh_500" "rh_700" "rh_850" "rh_950" "t_500" "t_700" "t_850" "t_950"\
+	images_output=("cape_cin" "t_v_pres" "winds10m" "precip_clouds"\
+		"hsnow" "tmin" "gph_500_mslp" "gph_t_500" "gph_t_850" "sat"\
 		"winter" "precip_acc" "tmax")
 
 	# suffix for naming
 	projections_output=("" "it/" "nord/")
 	# remote folder on server
-	projections_output_folder=("cosmo_de_forecasts" "cosmo_de_forecasts/it" "cosmo_de_forecasts/nord")
+	projections_output_folder=("icon_d2" "icon_d2/it" "icon_d2/nord")
 
 	# Create a lisf of all the images to upload 
 	upload_elements=()
 	for i in "${!projections_output[@]}"; do
 		for j in "${images_output[@]}"; do
-				upload_elements+=("${projections_output_folder[$i]}/${j} ./${projections_output[$i]}${j}_*")
+				upload_elements+=("${projections_output_folder[$i]}/${j} ./${projections_output[$i]}${j}_*.png")
 		done
 	done
 
@@ -150,9 +152,6 @@ if [ "$DATA_UPLOAD" = true ]; then
 fi 
 
 # SECTION 4 - CLEANING ############################################################
-
-#Remove images locally
-
 
 echo "-----------------------------------------------------------------------------------------"
 echo "icon-d2: Finished processing run ${year}${month}${day}${run} - `date`"

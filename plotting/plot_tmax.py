@@ -84,11 +84,12 @@ def plot_files(dss, **args):
                                density=density)
 
         an_fc = annotation_forecast(args['ax'], time)
-        an_var = annotation(args['ax'], 'Maximum 2m Temperature in last 6 hours',
+        an_var = annotation(args['ax'], 'Maximum 2m Temperature in previous 6 hours',
                             loc='lower left', fontsize=6)
         an_run = annotation_run(args['ax'], run)
         logo = add_logo_on_map(ax=args['ax'],
                                 zoom=0.1, pos=(0.95, 0.08))
+
         if first:
             plt.colorbar(cs, orientation='horizontal', label='Temperature [C]', pad=0.03, fraction=0.04)
         
@@ -96,10 +97,11 @@ def plot_files(dss, **args):
             plt.show(block=True)
         else:
             plt.savefig(filename, **options_savefig)        
-        
-        remove_collections([cs, an_fc, an_var, an_run, vals])
 
-        first = False 
+        remove_collections([cs, an_fc, an_var, an_run, vals, logo])
+
+        first = False
+
 
 if __name__ == "__main__":
     import time

@@ -1,7 +1,6 @@
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import xarray as xr
 from metpy.units import units
 from glob import glob
 import numpy as np
@@ -14,22 +13,22 @@ from matplotlib.dates import DateFormatter
 from matplotlib import gridspec
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 from tqdm.contrib.concurrent import process_map
+import time
+
 
 print_message('Starting script to plot meteograms')
 
-# Get the projection as system argument from the call so that we can 
-# span multiple instances of this script outside
 if not sys.argv[1:]:
     print_message('City not defined, falling back to default (Hamburg)')
     cities = ['Hamburg']
-else:    
+else:
     cities = sys.argv[1:]
 
 
 def main():
     dset = read_dataset(variables=['t_2m', 'td_2m', 't', 'vmax_10m',
                                    'pmsl', 'HSURF', 'ww', 'rain_gsp', 'rain_con',
-                                   'snow_gsp', 'snow_con', 'relhum', 'u', 'v', 'clc'])
+                                   'snow_gsp', 'snow_con', 'relhum', 'u', 'v', 'clc'], freq=None)
     # Subset dataset on cities and create iterator
     it = []
     for city in cities:
@@ -168,7 +167,6 @@ def plot(dset_city):
 
 
 if __name__ == "__main__":
-    import time
     start_time=time.time()
     main()
     elapsed_time=time.time()-start_time

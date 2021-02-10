@@ -11,10 +11,10 @@ if not debug:
 
 import matplotlib.pyplot as plt
 
-# The one employed for the figure name when exported
-variable_name = 'cape_cin'
+# The one employed for the figure name when exported 
+variable_name = 'tmin'
 
-print_message('Starting script to plot ' + variable_name)
+print_message('Starting script to plot '+variable_name)
 
 # Get the projection as system argument from the call so that we can
 # span multiple instances of this script outside
@@ -27,28 +27,24 @@ else:
 
 
 def main():
-    dset = read_dataset(variables=['cape_ml', 'cin_ml', 'u', 'v'],
-                        projection=projection,
-                        level=85000)
+    """In the main function we basically read the files and prepare the variables to be plotted.
+    This is not included in utils.py as it can change from case to case."""
+    dset = read_dataset(variables=['tmin_2m'], projection=projection)
+    dset['TMIN_2M'].metpy.convert_units('degC')
 
-    levels_cape = np.arange(250., 5000., 50.)
-    cmap = get_colormap("winds")
+    levels_t2m = np.arange(-25, 40, 1)
 
-    # initialize figure
+    cmap = get_colormap("temp")
+
     _ = plt.figure(figsize=(figsize_x, figsize_y))
-    ax = plt.gca()
-    # Get coordinates from dataset
-    m, x, y = get_projection(dset, projection, labels=True)
-    # additional maps adjustment for this map
-    m.fillcontinents(color='lightgray', lake_color='whitesmoke', zorder=0)
 
-    dset = dset.drop(['lon', 'lat'])
+    ax  = plt.gca()
+    m, x, y = get_projection(dset, projection, labels=True)
 
     # All the arguments that need to be passed to the plotting function
-    # we pass only arrays to avoid the pickle problem when unpacking in multiprocessing
-    args = dict(x=x, y=y, ax=ax, cmap=cmap,
-                levels_cape=levels_cape,
-                time=dset.time)
+    args=dict(x=x, y=y, ax=ax, cmap=cmap,
+             levels_t2m=levels_t2m,
+             time=dset.time)
 
     print_message('Pre-processing finished, launching plotting scripts')
     if debug:
@@ -70,43 +66,42 @@ def plot_files(dss, **args):
         filename = subfolder_images[projection] + '/' + variable_name + '_%s.png' % cum_hour
 
         cs = args['ax'].contourf(args['x'], args['y'],
-                                 data['CAPE_ML'],
-                                 extend='max',
+                                 data['TMIN_2M'],
+                                 extend='both',
                                  cmap=args['cmap'],
-                                 levels=args['levels_cape'])
-        cr = args['ax'].contourf(args['x'], args['y'],
-                                 data['CIN_ML'],
-                                 colors='none',
-                                 levels=(-100., -50.),
-                                 hatches=['...','...'])
+                                 levels=args['levels_t2m'])
 
-
-        density = 15
-        cv = args['ax'].quiver(args['x'][::density, ::density],
-                               args['y'][::density, ::density],
-                               data['u'][::density, ::density],
-                               data['v'][::density, ::density],
-                               scale=None,
-                               alpha=0.8, color='gray')
+        # plot every -th element
+        if projection=="nord":
+            density = 10
+        elif projection=="it":
+            density = 12
+        elif projection=="de":
+            density = 16
+        vals = add_vals_on_map(args['ax'], projection,
+                               data['TMIN_2M'], args['levels_t2m'],
+                               cmap=args['cmap'],
+                               density=density)
 
         an_fc = annotation_forecast(args['ax'], time)
-        an_var = annotation(args['ax'], 'CAPE and Winds@850 hPa, hatches CIN$<-50$ J/kg',
-            loc='lower left', fontsize=6)
+        an_var = annotation(args['ax'], 'Minimum 2m Temperature in previous 6 hours',
+                            loc='lower left', fontsize=6)
         an_run = annotation_run(args['ax'], run)
         logo = add_logo_on_map(ax=args['ax'],
                                 zoom=0.1, pos=(0.95, 0.08))
 
         if first:
-            plt.colorbar(cs, orientation='horizontal', label='CAPE [J/kg]', pad=0.04, fraction=0.04)
-
+            plt.colorbar(cs, orientation='horizontal', label='Temperature [C]', pad=0.03, fraction=0.04)
+        
         if debug:
             plt.show(block=True)
         else:
             plt.savefig(filename, **options_savefig)        
 
-        remove_collections([cs, an_fc, an_var, an_run, cv, cr, logo])
+        remove_collections([cs, an_fc, an_var, an_run, vals, logo])
 
-        first = False 
+        first = False
+
 
 if __name__ == "__main__":
     import time

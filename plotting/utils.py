@@ -17,6 +17,7 @@ import re
 from matplotlib.image import imread as read_png
 import requests
 import json
+import matplotlib.pyplot as plt
 
 import warnings
 warnings.filterwarnings(
@@ -44,10 +45,10 @@ else:
     home_folder = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 # Options for savefig
-options_savefig={
+options_savefig = {
     'dpi':100,
     'bbox_inches':'tight',
-    'transparent': True
+    'transparent':False
 }
 
 # Dictionary to map the output folder based on the projection employed
@@ -130,7 +131,7 @@ proj_defs = {
     'de':
     {
         'projection': 'cyl',
-        'llcrnrlon': 5,
+        'llcrnrlon': 4.5,
         'llcrnrlat': 46.5,
         'urcrnrlon': 16,
         'urcrnrlat': 56,
@@ -170,7 +171,7 @@ def get_weather_icons(ww, time):
 
 
 def read_dataset(variables = ['T_2M', 'TD_2M'], level=None, projection=None,
-                 engine='scipy'):
+                 engine='scipy', freq='1H'):
     """Wrapper to initialize the dataset"""
     # Create the regex for the files with the needed variables
     variables_search = '('+'|'.join(variables)+')'
@@ -181,11 +182,15 @@ def read_dataset(variables = ['T_2M', 'TD_2M'], level=None, projection=None,
                format='%Y%m%d%H')
     # find only the files with the variables that we need 
     needed_files = [f for f in files if re.search(r'/%s(?:_\d{10})' % variables_search, f)]
-    dset = xr.open_mfdataset(needed_files, preprocess=preprocess, engine=engine)
+    dset = xr.open_mfdataset(needed_files,
+                             preprocess=preprocess,
+                             engine=engine)
     # NOTE!! Even though we use open_mfdataset, which creates a Dask array, we then 
     # load the dataset into memory since otherwise the object cannot be pickled by 
     # multiprocessing
     dset = dset.metpy.parse_cf()
+    if freq:
+        dset = dset.resample(time=freq).nearest(tolerance='1H')
     if level:
         dset = dset.sel(plev=level, method='nearest')
     if projection:
@@ -195,6 +200,11 @@ def read_dataset(variables = ['T_2M', 'TD_2M'], level=None, projection=None,
                         lon=slice(proj_options['llcrnrlon'],
                                   proj_options['urcrnrlon']))
     dset['run'] = run
+
+    # chunk now based on the dimension of the dataset after the subsetting
+    dset = dset.chunk({'time': round(len(dset.time) / 10),
+                       'lat': round(len(dset.lat) / 4),
+                       'lon': round(len(dset.lon) / 4)})
 
     return dset
 
@@ -282,7 +292,7 @@ def get_projection(dset, projection="de", countries=True, regions=True, labels=F
     if projection=="de":
         if regions:
             m.readshapefile(home_folder + '/plotting/shapefiles/DEU_adm/DEU_adm1',
-                            'DEU_adm1',linewidth=0.2,color='black',zorder=5)
+                            'DEU_adm1',linewidth=0.2,color='black',zorder=7)
         if labels:
             m.drawparallels(np.arange(-80.,81.,2), linewidth=0.2, color='white',
                 labels=[True, False, False, True], fontsize=7)
@@ -291,7 +301,7 @@ def get_projection(dset, projection="de", countries=True, regions=True, labels=F
     elif projection=="it":
         if regions:
             m.readshapefile(home_folder + '/plotting/shapefiles/ITA_adm/ITA_adm1',
-                            'ITA_adm1',linewidth=0.2,color='black',zorder=5)
+                            'ITA_adm1',linewidth=0.2,color='black',zorder=7)
         if labels:
             m.drawparallels(np.arange(-80.,81.,2), linewidth=0.2, color='white',
                 labels=[True, False, False, True], fontsize=7)
@@ -300,20 +310,30 @@ def get_projection(dset, projection="de", countries=True, regions=True, labels=F
     elif projection=="nord":
         if regions:
             m.readshapefile(home_folder + '/plotting/shapefiles/DEU_adm/DEU_adm1',
-                            'DEU_adm1',linewidth=0.2,color='black',zorder=5)
+                            'DEU_adm1',linewidth=0.2,color='black',zorder=7)
         if labels:
             m.drawparallels(np.arange(-80.,81.,2), linewidth=0.2, color='white',
                 labels=[True, False, False, True], fontsize=7)
             m.drawmeridians(np.arange(-180.,181.,2), linewidth=0.2, color='white',
                 labels=[True, False, False, True], fontsize=7)
 
-    m.drawcoastlines(linewidth=0.5, linestyle='solid', color=color_borders, zorder=5)
+    m.drawcoastlines(linewidth=0.5, linestyle='solid', color=color_borders, zorder=7)
     if countries:
-        m.drawcountries(linewidth=0.5, linestyle='solid', color=color_borders, zorder=5)
+        m.drawcountries(linewidth=0.5, linestyle='solid', color=color_borders, zorder=7)
 
     x, y = m(lon2d, lat2d)
 
     return(m, x, y)
+
+
+def plot_background_mapbox(m, xpixels=800):
+    ypixels = round(m.aspect * xpixels)
+    bbox = '[%s,%s,%s,%s]' % (m.llcrnrlon,m.llcrnrlat,m.urcrnrlon,m.urcrnrlat)
+    url = 'https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/%s/%sx%s?access_token=%s&logo=false' % (bbox, xpixels, ypixels, apiKey)
+
+    img = plt.imread(url)
+
+    m.imshow(img, origin='upper')
 
 
 def chunks(l, n):
@@ -334,7 +354,7 @@ def annotation_run(ax, time, loc='upper right',fontsize=8):
     """Put annotation of the run obtaining it from the
     time array passed to the function."""
     time = pd.to_datetime(time)
-    at = AnchoredText('Run %s'% time.strftime('%Y%m%d %H UTC'), 
+    at = AnchoredText('ICON-D2 Run %s'% time.strftime('%Y%m%d %H UTC'), 
                        prop=dict(size=fontsize), frameon=True, loc=loc)
     at.patch.set_boxstyle("round,pad=0.,rounding_size=0.1")
     at.zorder = 10
@@ -366,7 +386,7 @@ def add_logo_on_map(ax, logo=home_folder+'/plotting/meteoindiretta_logo.png', zo
         img_logo, pos, xycoords='axes fraction', frameon=False)
     logo_ann.set_zorder(10)
     at = ax.add_artist(logo_ann)
-    return at 
+    return at
 
 
 def convert_timezone(dt_from, from_tz='utc', to_tz='Europe/Berlin'):
@@ -376,6 +396,7 @@ def convert_timezone(dt_from, from_tz='utc', to_tz='Europe/Berlin'):
     # remove again the timezone information
 
     return dt_to.tz_localize(None)
+
 
 def annotation(ax, text, loc='upper right',fontsize=8):
     """Put a general annotation in the plot."""
@@ -443,6 +464,14 @@ def get_colormap_norm(cmap_type, levels):
         colors_tuple = pd.read_csv(home_folder + '/plotting/cmap_winds.rgba').values    
         cmap, norm = from_levels_and_colors(levels, sns.color_palette(colors_tuple, n_colors=len(levels)),
                          extend='max')
+    elif cmap_type == "rain_acc_wxcharts":
+        colors_tuple = pd.read_csv(home_folder + '/plotting/cmap_rain_acc_wxcharts.rgba').values    
+        cmap, norm = from_levels_and_colors(levels, sns.color_palette(colors_tuple, n_colors=len(levels)),
+                         extend='max')
+    elif cmap_type == "snow_wxcharts":
+        colors_tuple = pd.read_csv(home_folder + '/plotting/cmap_snow_wxcharts.rgba').values    
+        cmap, norm = from_levels_and_colors(levels, sns.color_palette(colors_tuple, n_colors=len(levels)),
+                         extend='max')
 
     return(cmap, norm)
 
@@ -452,18 +481,19 @@ def remove_collections(elements):
     touching the background, which can then be used afterwards."""
     for element in elements:
         try:
-            for coll in element.collections: 
+            for coll in element.collections:
                 coll.remove()
         except AttributeError:
             try:
                 for coll in element:
                     coll.remove()
             except ValueError:
-                print('WARNING: Collection is empty')
+                print_message('WARNING: Element is empty')
             except TypeError:
-                element.remove() 
+                element.remove()
         except ValueError:
-            print('WARNING: Collection is empty')
+            print_message('WARNING: Collection is empty')
+
 
 def plot_maxmin_points(ax, lon, lat, data, extrema, nsize, symbol, color='k',
                        random=False):
@@ -506,22 +536,25 @@ def plot_maxmin_points(ax, lon, lat, data, extrema, nsize, symbol, color='k',
     for i in range(len(mxy)):
         texts.append( ax.text(lon[mxy[i], mxx[i]], lat[mxy[i], mxx[i]], symbol, color=color, size=15,
                 clip_on=True, horizontalalignment='center', verticalalignment='center',
-                path_effects=[path_effects.withStroke(linewidth=1, foreground="black")], zorder=6) )
+                path_effects=[path_effects.withStroke(linewidth=1, foreground="black")], zorder=8) )
         texts.append( ax.text(lon[mxy[i], mxx[i]], lat[mxy[i], mxx[i]], '\n' + str(data[mxy[i], mxx[i]].astype('int')),
                 color="gray", size=10, clip_on=True, fontweight='bold',
-                horizontalalignment='center', verticalalignment='top', zorder=6) )
-    
+                horizontalalignment='center', verticalalignment='top',
+                zorder=8) )
     return(texts)
 
+
 def add_vals_on_map(ax, projection, var, levels, density=50,
-                     cmap='rainbow', shift_x=0., shift_y=0., fontsize=8, lcolors=True):
+                     cmap='rainbow', norm=None, shift_x=0., shift_y=0., fontsize=7.5, lcolors=True):
     '''Given an input projection, a variable containing the values and a plot put
     the values on a map exlcuing NaNs and taking care of not going
     outside of the map boundaries, which can happen.
     - shift_x and shift_y apply a shifting offset to all text labels
     - colors indicate whether the colorscale cmap should be used to map the values of the array'''
 
-    norm = colors.Normalize(vmin=levels.min(), vmax=levels.max())
+    if norm is None:
+        norm = colors.Normalize(vmin=np.min(levels), vmax=np.max(levels))
+
     m = mplcm.ScalarMappable(norm=norm, cmap=cmap)
 
     proj_options = proj_defs[projection]
@@ -530,21 +563,23 @@ def add_vals_on_map(ax, projection, var, levels, density=50,
 
 
     # Remove values outside of the extents
-    var = var.sel(lat=slice(lat_min-0.5, lat_max+0.5), lon=slice(lon_min-0.5, lon_max+0.5))[::density, ::density]
-    lons = var.lon
-    lats = var.lat
+    var = var.sel(lat=slice(lat_min + 0.15, lat_max - 0.15),
+                  lon=slice(lon_min + 0.15, lon_max - 0.15))[::density, ::density]
+    lons = var.lon.values
+    lats = var.lat.values
 
     at = []
     for ilat, ilon in np.ndindex(var.shape):
         if not var[ilat, ilon].isnull():
             if lcolors:
-                at.append(ax.annotate(('%d'%var[ilat, ilon]), (lons[ilon]+shift_x, lats[ilat]+shift_y),
-                                 color = m.to_rgba(float(var[ilat, ilon])), weight='bold', fontsize=fontsize,
-                                  path_effects=[path_effects.withStroke(linewidth=1, foreground="black")], zorder=5))
+                at.append(ax.annotate(('%d'%var[ilat, ilon]), (lons[ilon] + shift_x, lats[ilat] + shift_y),
+                                  color = m.to_rgba(float(var[ilat, ilon])), weight='bold', fontsize=fontsize,
+                                  path_effects=[path_effects.withStroke(linewidth=1, foreground="white")], zorder=5))
+
             else:
-                at.append(ax.annotate(('%d'%var[ilat, ilon]), (lons[i]+shift_x, lats[i]+shift_y),
+                at.append(ax.annotate(('%d'%var[ilat, ilon]), (lons[ilon] + shift_x, lats[ilat] + shift_y),
                                  color = 'white', weight='bold', fontsize=fontsize,
-                                  path_effects=[path_effects.withStroke(linewidth=1, foreground="black")], zorder=5))
+                                  path_effects=[path_effects.withStroke(linewidth=1, foreground="white")], zorder=5))
 
     return at
 

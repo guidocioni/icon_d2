@@ -3,7 +3,7 @@ from multiprocessing import Pool
 from functools import partial
 from utils import *
 import sys
-from computations import compute_rain_snow_change
+from computations import compute_snow_change
 
 debug = False
 if not debug:
@@ -30,37 +30,44 @@ else:
 def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
-    dset = read_dataset(variables=['rain_gsp', 'snow_gsp', 'snowlmt'],
+    dset = read_dataset(variables=['rain_gsp', 'h_snow', 'snowlmt'],
                         projection=projection)
     dset = dset.resample(time="1H").nearest(tolerance="1H")
-    dset = compute_rain_snow_change(dset)
+
+    rain = (dset['RAIN_GSP'] - dset['RAIN_GSP'][0, :, :])
+    rain = xr.DataArray(rain, name='rain_increment')
+
+    dset.sde.metpy.convert_units('cm')
+    dset = compute_snow_change(dset)
+
+    dset = xr.merge([dset, rain])
     dset['SNOWLMT'].metpy.convert_units('m')
 
-    levels_snow = (1, 5, 10, 15, 20, 30, 40, 50, 70, 90, 120)
+    levels_snow = (0.25, 0.5, 1, 2.5, 5, 10, 15, 20, 25, 30, 40, 50, 70, 90, 150)
     levels_rain = (10, 15, 25, 35, 50, 75, 100, 125, 150)
     levels_snowlmt = np.arange(0., 3000., 500.)
 
-    cmap_snow, norm_snow = get_colormap_norm("snow_discrete", levels_snow)
+    cmap_snow, norm_snow = get_colormap_norm("snow_wxcharts", levels_snow)
     cmap_rain, norm_rain = get_colormap_norm("rain", levels_rain)
 
     _ = plt.figure(figsize=(figsize_x, figsize_y))
     ax = plt.gca()
 
     m, x, y = get_projection(dset, projection, labels=True)
-    m.fillcontinents(color='lightgray',lake_color='whitesmoke', zorder=0)
+    m.arcgisimage(service='World_Shaded_Relief', xpixels = 1500)
 
-    dset = dset.drop(['lon', 'lat', 'RAIN_GSP', 'SNOW_GSP']).load()
+    dset = dset.drop(['RAIN_GSP', 'sde']).load()
 
     # All the arguments that need to be passed to the plotting function
     args = dict(m=m, x=x, y=y, ax=ax,
              levels_snowlmt=levels_snowlmt, levels_rain=levels_rain,
              levels_snow=levels_snow,
-             time=dset.time, norm_snow=norm_snow,
+             norm_snow=norm_snow,
              cmap_rain=cmap_rain, cmap_snow=cmap_snow, norm_rain=norm_rain)
 
     print_message('Pre-processing finished, launching plotting scripts')
     if debug:
-        plot_files(dset.isel(time=slice(0, 2)), **args)
+        plot_files(dset.isel(time=slice(-2, -1)), **args)
     else:
         # Parallelize the plotting by dividing into chunks and processes 
         dss = chunks_dataset(dset, chunks_size)
@@ -80,18 +87,26 @@ def plot_files(dss, **args):
 
         cs_rain = args['ax'].contourf(args['x'], args['y'], data['rain_increment'],
                          extend='max', cmap=args['cmap_rain'], norm=args['norm_rain'],
-                         levels=args['levels_rain'], alpha=0.8)
+                         levels=args['levels_rain'], alpha=0.5, antialiased = True)
         cs_snow = args['ax'].contourf(args['x'], args['y'], data['snow_increment'],
                          extend='max', cmap=args['cmap_snow'], norm=args['norm_snow'],
-                         levels=args['levels_snow'], alpha=0.8)
+                         levels=args['levels_snow'], antialiased = True)
 
         c = args['ax'].contour(args['x'], args['y'], data['SNOWLMT'], levels=args['levels_snowlmt'],
                              colors='red', linewidths=0.5)
 
-        labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)  
+        labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f', fontsize=5)
+
+        vals = add_vals_on_map(args['ax'],
+                           projection,
+                           data['snow_increment'].where(data['snow_increment'] >= 1),
+                           args['levels_snow'],
+                           cmap=args['cmap_snow'],
+                           norm=args['norm_snow'],
+                           density=10)
 
         an_fc = annotation_forecast(args['ax'], time)
-        an_var = annotation(args['ax'], 'Snow and rain accumulated',
+        an_var = annotation(args['ax'], 'New snow and accumulated rain (since run start)',
             loc='lower left', fontsize=6)
         an_run = annotation_run(args['ax'], run)
         logo = add_logo_on_map(ax=args['ax'],
@@ -121,7 +136,7 @@ def plot_files(dss, **args):
         else:
             plt.savefig(filename, **options_savefig)        
 
-        remove_collections([cs_rain, cs_snow, c, labels, an_fc, an_var, an_run, logo])
+        remove_collections([cs_rain, cs_snow, c, labels, an_fc, an_var, an_run, logo, vals])
 
         first = False 
 

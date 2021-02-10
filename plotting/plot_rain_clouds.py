@@ -4,6 +4,7 @@ from functools import partial
 from utils import *
 import sys
 from computations import compute_rate
+import metpy.calc as mpcalc
 
 debug = False
 if not debug:
@@ -47,7 +48,7 @@ def main():
 
     cmap_snow, norm_snow = get_colormap_norm("snow", levels_snow)
     cmap_rain, norm_rain = get_colormap_norm("rain_new", levels_rain)
-    cmap_clouds = truncate_colormap(plt.get_cmap('Greys'), 0., 0.5)
+    cmap_clouds = truncate_colormap(plt.get_cmap('Greys'), 0.2, 0.7)
     cmap_clouds_high = truncate_colormap(plt.get_cmap('Oranges'), 0., 0.5)
 
     _ = plt.figure(figsize=(figsize_x, figsize_y))
@@ -55,8 +56,9 @@ def main():
     ax = plt.gca()
     # Get coordinates from dataset
     m, x, y = get_projection(dset, projection, labels=True)
-    m.drawmapboundary(fill_color='whitesmoke')
-    m.fillcontinents(color='lightgray',lake_color='whitesmoke', zorder=1)
+    m.arcgisimage(service='World_Shaded_Relief', xpixels = 1500)
+    #m.drawmapboundary(fill_color='whitesmoke')
+    #m.fillcontinents(color='lightgray',lake_color='whitesmoke', zorder=1)
 
     dset = dset.drop(['lon', 'lat', 'RAIN_GSP', 'SNOW_GSP']).load()
 
@@ -80,17 +82,19 @@ def main():
         p = Pool(processes)
         p.map(plot_files_param, dss)
 
+
 def plot_files(dss, **args):
     first = True
     for time_sel in dss.time:
         data = dss.sel(time=time_sel)
+        data['prmsl'].values = mpcalc.smooth_n_point(data['prmsl'].values, n=9, passes=10)
         time, run, cum_hour = get_time_run_cum(data)
         # Build the name of the output image
         filename = subfolder_images[projection] + '/' + variable_name + '_%s.png' % cum_hour
 
         cs_rain = args['ax'].contourf(args['x'], args['y'], data['rain_rate'],
                          extend='max', cmap=args['cmap_rain'], norm=args['norm_rain'],
-                         levels=args['levels_rain'], zorder=4)
+                         levels=args['levels_rain'], zorder=4, antialiased=True)
         cs_snow = args['ax'].contourf(args['x'], args['y'], data['snow_rate'],
                          extend='max', cmap=args['cmap_snow'], norm=args['norm_snow'],
                          levels=args['levels_snow'], zorder=5)
@@ -99,10 +103,10 @@ def plot_files(dss, **args):
                          levels=args['levels_clouds'], zorder=3)
         cs_clouds_high = args['ax'].contourf(args['x'], args['y'], data['CLCH'],
                          extend='max', cmap=args['cmap_clouds_high'],
-                         levels=args['levels_clouds'], zorder=2, alpha=0.7)
+                         levels=args['levels_clouds'], zorder=2, alpha=0.5, antialiased=True)
 
         c = args['ax'].contour(args['x'], args['y'], data['prmsl'],
-                             levels=args['levels_mslp'], colors='black', linewidths=1., zorder=6, alpha=1.0)
+                             levels=args['levels_mslp'], colors='whitesmoke', linewidths=1., zorder=7, alpha=1.0)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=6)
 
@@ -137,16 +141,17 @@ def plot_files(dss, **args):
              label='Rain [mm/hr]')
             cbar_snow.ax.tick_params(labelsize=8) 
             cbar_rain.ax.tick_params(labelsize=8)
-
+        
         if debug:
             plt.show(block=True)
         else:
             plt.savefig(filename, **options_savefig)        
-
+        
         remove_collections([c, cs_rain, cs_snow, cs_clouds_low, cs_clouds_high,
-                            labels, an_fc, an_var, an_run, maxlabels, minlabels, logo])
+                             labels, an_fc, an_var, an_run, maxlabels, minlabels, logo])
 
         first = False 
+
 
 if __name__ == "__main__":
     import time
@@ -154,3 +159,4 @@ if __name__ == "__main__":
     main()
     elapsed_time=time.time()-start_time
     print_message("script took " + time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
+
