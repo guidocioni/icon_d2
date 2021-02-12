@@ -45,13 +45,14 @@ def find_file_name(vars_2d=None,
                    vars_3d=None,
                    levels_3d=None,
                    base_url="https://opendata.dwd.de/weather/nwp",
-                   model_url="icon-d2/grib",
+                   model_url="icon-d2-eps/grib",
                    date_string=None,
                    run_string=None):
     if run_string == '03':
         f_times = list(range(0, 46))
     else:
         f_times = list(range(0, 28))
+
     #
     if type(f_times) is not list:
         f_times = [f_times]
@@ -82,8 +83,8 @@ def find_file_name(vars_2d=None,
             data['run'].append('%s%s' % (date_string, run_string))
             urls_to_check = []
             for f_time in f_times:
-                var_url = "icon-d2_germany_regular-lat-lon_single-level"
-                urls_to_check.append("%s/%s/%s/%s/%s_%s%s_%03d_%s.grib2.bz2" %
+                var_url = "icon-d2-eps_germany_icosahedral_single-level"
+                urls_to_check.append("%s/%s/%s/%s/%s_%s%s_%03d_2d_%s.grib2.bz2" %
                                      (base_url, model_url, run_string, var,
                                       var_url, date_string, run_string, f_time, var))
             urls_on_server = get_url_paths("%s/%s/%s/%s/" % (base_url, model_url, run_string, var),
@@ -108,7 +109,7 @@ def find_file_name(vars_2d=None,
             urls_to_check = []
             for plev in levels_3d:
                 for f_time in f_times:
-                    var_url = "icon-d2_germany_regular-lat-lon_pressure-level"
+                    var_url = "icon-d2-eps_germany_icosahedral_pressure-level"
                     urls_to_check.append("%s/%s/%s/%s/%s_%s%s_%03d_%s_%s.grib2.bz2" %
                                          (base_url, model_url, run_string, var,
                                           var_url, date_string, run_string, f_time, plev, var))
@@ -144,12 +145,13 @@ def get_most_recent_run(run=None, vars_2d=None, vars_3d=['t'],
         for run_string in runs:
             try:
                 temp.append(find_file_name(vars_2d=vars_2d,
-                                       vars_3d=vars_3d,
-                                       levels_3d=levels_3d,
-                                       date_string=date_string,
-                                       run_string=run_string))
+                                           vars_3d=vars_3d,
+                                           levels_3d=levels_3d,
+                                           date_string=date_string,
+                                           run_string=run_string))
             except:
                 continue
+
     final = pd.concat(temp)
     sel_run = final.loc[final.status == 'all files available', 'run'].max()
     return final, sel_run

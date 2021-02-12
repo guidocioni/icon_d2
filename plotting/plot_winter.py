@@ -54,7 +54,7 @@ def main():
     ax = plt.gca()
 
     m, x, y = get_projection(dset, projection, labels=True)
-    m.arcgisimage(service='World_Shaded_Relief', xpixels = 1500)
+    m.arcgisimage(service='Canvas/World_Dark_Gray_Base', xpixels = 1000)
 
     dset = dset.drop(['RAIN_GSP', 'sde']).load()
 

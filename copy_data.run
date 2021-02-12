@@ -11,7 +11,7 @@ echo "--------------------------------------------------------------------------
 export MODEL_DATA_FOLDER="/tmp/icon-d2/"
 export HOME_FOLDER=$(pwd)
 export N_CONCUR_PROCESSES=8
-export NCFTP_BOOKMARK="altervista"
+export NCFTP_BOOKMARK="mid"
 DATA_DOWNLOAD=true
 DATA_PLOTTING=true
 DATA_UPLOAD=true
@@ -95,7 +95,7 @@ if [ "$DATA_PLOTTING" = true ]; then
 
 	projections=("de" "it" "nord")
 
-	parallel -j 5 --delay 1 python ::: "${scripts[@]}" ::: "${projections[@]}"
+	parallel -j 4 --delay 1 python ::: "${scripts[@]}" ::: "${projections[@]}"
 	rm ${MODEL_DATA_FOLDER}*.py
 fi
 

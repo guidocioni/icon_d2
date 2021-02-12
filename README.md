@@ -1,7 +1,7 @@
 # icon_d2_forecasts
 Download and plot ICON-D2 data.
 
-![Plotting sample](http://guidocioni.altervista.org/cosmo_de_forecasts/t_v_pres/t_v_pres_1.png)
+![Plotting sample](https://maps.meteoindiretta.it/icon_d2/t_v_pres/t_v_pres_1.png)
 
 In the following repository I include a fully-functional suite of scripts needed to download, merge and plot data from the ICON-D2 model,
 which is freely available at https://opendata.dwd.de/weather/.
