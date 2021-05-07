@@ -31,6 +31,9 @@ def main():
                         projection=projection,
                         level=85000)
 
+    dset['CAPE_ML'] = dset['CAPE_ML'].where(dset['CAPE_ML'] >= 250)
+    dset['CIN_ML'] = dset['CIN_ML'].where(((dset['CIN_ML'] < 0) & (dset['CIN_ML'] > -150)))
+
     levels_cape = np.arange(250., 5000., 50.)
     cmap = get_colormap("winds")
 
@@ -42,13 +45,12 @@ def main():
     # additional maps adjustment for this map
     m.fillcontinents(color='lightgray', lake_color='whitesmoke', zorder=0)
 
-    dset = dset.drop(['lon', 'lat'])
+    dset = dset.drop(['lon', 'lat']).load()
 
     # All the arguments that need to be passed to the plotting function
     # we pass only arrays to avoid the pickle problem when unpacking in multiprocessing
     args = dict(x=x, y=y, ax=ax, cmap=cmap,
-                levels_cape=levels_cape,
-                time=dset.time)
+                levels_cape=levels_cape)
 
     print_message('Pre-processing finished, launching plotting scripts')
     if debug:
@@ -78,7 +80,7 @@ def plot_files(dss, **args):
                                  data['CIN_ML'],
                                  colors='none',
                                  levels=(-100., -50.),
-                                 hatches=['...','...'])
+                                 hatches=['...', '...'])
 
 
         density = 15
