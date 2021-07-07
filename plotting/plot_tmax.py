@@ -32,7 +32,7 @@ def main():
     dset = read_dataset(variables=['tmax_2m'], projection=projection)
     dset['TMAX_2M'].metpy.convert_units('degC')
 
-    levels_t2m = np.arange(-25, 40, 1)
+    levels_t2m = np.arange(-25, 45, 1)
 
     cmap = get_colormap("temp")
 

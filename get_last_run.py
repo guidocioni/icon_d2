@@ -48,10 +48,8 @@ def find_file_name(vars_2d=None,
                    model_url="icon-d2-eps/grib",
                    date_string=None,
                    run_string=None):
-    if run_string == '03':
-        f_times = list(range(0, 46))
-    else:
-        f_times = list(range(0, 28))
+
+    f_times = list(range(0, 49))
 
     #
     if type(f_times) is not list:
