@@ -34,8 +34,8 @@ def main():
     This is not included in utils.py as it can change from case to case."""
     dset = read_dataset(variables=['h_snow', 'snowlmt'],
                         projection=projection)
-    dset['sde'].metpy.convert_units('cm')
-    dset['SNOWLMT'].metpy.convert_units('m')
+    dset['sde'] = dset['sde'].metpy.convert_units('cm').metpy.dequantify()
+    dset['SNOWLMT'] = dset['SNOWLMT'].metpy.convert_units('m').metpy.dequantify()
 
     dset = compute_snow_change(dset)
 

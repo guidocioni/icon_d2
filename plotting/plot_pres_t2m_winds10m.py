@@ -21,7 +21,7 @@ print_message('Starting script to plot '+variable_name)
 # span multiple instances of this script outside
 if not sys.argv[1:]:
     print_message(
-        'Projection not defined, falling back to default (euratl)')
+        'Projection not defined, falling back to default (de)')
     projection = 'de'
 else:
     projection = sys.argv[1]
@@ -33,8 +33,8 @@ def main():
     dset = read_dataset(variables=['u_10m', 'v_10m', 't_2m', 'pmsl'],
                          projection=projection)
 
-    dset['2t'].metpy.convert_units('degC')
-    dset['prmsl'].metpy.convert_units('hPa')
+    dset['2t'] = dset['2t'].metpy.convert_units('degC').metpy.dequantify()
+    dset['prmsl'] = dset['prmsl'].metpy.convert_units('hPa').metpy.dequantify()
 
     levels_t2m = np.arange(-25, 45, 1)
 

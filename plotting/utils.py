@@ -31,7 +31,7 @@ apiURL_places = "https://api.mapbox.com/geocoding/v5/mapbox.places"
 if 'MODEL_DATA_FOLDER' in os.environ:
     folder = os.environ['MODEL_DATA_FOLDER']
 else:
-    folder = '/tmp/icon-d2/'
+    folder = '/home/ekman/ssd/guido/icon-d2/'
 folder_images = folder
 chunks_size = 10
 processes = 9
@@ -55,7 +55,9 @@ options_savefig = {
 subfolder_images={
     'de' : folder_images,
     'it' : folder_images+'it',
-    'nord' : folder_images+'nord'
+    'nord' : folder_images+'nord',
+    'north_sea': folder_images,
+    'domain': folder_images
 }
 
 folder_glyph = home_folder + '/plotting/yrno_png/'
@@ -137,7 +139,25 @@ proj_defs = {
         'urcrnrlat': 56,
         'resolution': 'i',
         'epsg': 4269
-    }
+    },
+    'north_sea':
+    {
+        'projection': 'cyl',
+        'llcrnrlon': 0,
+        'llcrnrlat': 50,
+        'urcrnrlon': 10,
+        'urcrnrlat': 58,
+        'resolution': 'i',
+    },
+    'domain':
+    {
+        'projection': 'cyl',
+        'llcrnrlon': -3.9,
+        'llcrnrlat': 43.2,
+        'urcrnrlon': 20.3,
+        'urcrnrlat': 58,
+        'resolution': 'i',
+    },
 }
 
 
@@ -202,9 +222,9 @@ def read_dataset(variables = ['T_2M', 'TD_2M'], level=None, projection=None,
     dset['run'] = run
 
     # chunk now based on the dimension of the dataset after the subsetting
-    dset = dset.chunk({'time': round(len(dset.time) / 10),
-                       'lat': round(len(dset.lat) / 4),
-                       'lon': round(len(dset.lon) / 4)})
+    # dset = dset.chunk({'time': round(len(dset.time) / 10),
+    #                    'lat': round(len(dset.lat) / 4),
+    #                    'lon': round(len(dset.lon) / 4)})
 
     return dset
 

@@ -8,7 +8,7 @@ echo "icon-d2: Starting processing of icon model data - `date`"
 echo "-----------------------------------------------------------------------------------------"
 
 # Folder to be used to download and process data
-export MODEL_DATA_FOLDER="/tmp/icon-d2/"
+export MODEL_DATA_FOLDER="/home/ekman/ssd/guido/icon-d2/"
 export HOME_FOLDER=$(pwd)
 export N_CONCUR_PROCESSES=8
 export NCFTP_BOOKMARK="mid"
@@ -87,7 +87,7 @@ if [ "$DATA_PLOTTING" = true ]; then
 
 	export QT_QPA_PLATFORM=offscreen # Needed to avoid errors when using Python without display
 
-	python plot_meteogram.py Hamburg Pisa Milano Utrecht
+	# python plot_meteogram.py Hamburg Pisa Milano Utrecht
 
 	scripts=("plot_cape.py" "plot_hsnow.py" "plot_pres_t2m_winds10m.py" "plot_rain_clouds.py" "plot_rain_acc.py"\
 		     "plot_winds10m.py" "plot_gph_500_mslp.py" "plot_gph_t_500.py" "plot_gph_t_850.py" "plot_sat.py"\

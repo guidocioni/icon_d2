@@ -14,6 +14,7 @@ from matplotlib import gridspec
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 from tqdm.contrib.concurrent import process_map
 import time
+import sys
 
 
 print_message('Starting script to plot meteograms')
@@ -27,8 +28,9 @@ else:
 
 def main():
     dset = read_dataset(variables=['t_2m', 'td_2m', 't', 'vmax_10m',
-                                   'pmsl', 'HSURF', 'ww', 'rain_gsp', 'rain_con',
-                                   'snow_gsp', 'snow_con', 'relhum', 'u', 'v', 'clc'], freq=None)
+                                    'pmsl', 'HSURF', 'ww', 'relhum', 'u', 'v', 'clc'])
+    dset_prec = read_dataset(variables=['rain_gsp', 'rain_con', 'snow_gsp', 'snow_con',], freq=None).rename_dims({'time':'time_fine'}).rename({'time':'time_fine'})
+    dset = dset.merge(dset_prec)
     # Subset dataset on cities and create iterator
     it = []
     for city in cities:
@@ -37,42 +39,40 @@ def main():
         d.attrs['city'] = city
         it.append(d)
         del d
-
     process_map(plot, it, max_workers=processes, chunksize=2)
 
 
 def plot(dset_city):
     city = dset_city.attrs['city']
     print_message('Producing meteogram for %s' % city)
-    dset_hourly = dset_city.resample(time="1H").nearest(tolerance="1H")
-    time_hourly, run, cum_hour = get_time_run_cum(dset_hourly)
-    time_prec, _, _ = get_time_run_cum(dset_city)
-    t = dset_hourly['t']
-    t.metpy.convert_units('degC')
-    rh = dset_hourly['r']
-    t2m = dset_hourly['2t']
-    t2m.metpy.convert_units('degC')
-    td2m = dset_hourly['2d']
-    td2m.metpy.convert_units('degC')
-    vmax_10m = dset_hourly['VMAX_10M']
-    vmax_10m.metpy.convert_units('kph')
-    pmsl = dset_hourly['prmsl']
-    pmsl.metpy.convert_units('hPa')
-    plevs = dset_hourly['t'].metpy.vertical.metpy.unit_array.to('hPa').magnitude
+    time_hourly, run, cum_hour = get_time_run_cum(dset_city)
+    time_prec = dset_city['time_fine'].to_pandas()
+    t = dset_city['t'].load()
+    t = t.metpy.convert_units('degC').metpy.dequantify()
+    rh = dset_city['r'].load()
+    t2m = dset_city['2t'].load()
+    t2m = t2m.metpy.convert_units('degC').metpy.dequantify()
+    td2m = dset_city['2d'].load()
+    td2m = td2m.metpy.convert_units('degC').metpy.dequantify()
+    vmax_10m = dset_city['VMAX_10M'].load()
+    vmax_10m = vmax_10m.metpy.convert_units('kph').metpy.dequantify()
+    pmsl = dset_city['prmsl'].load()
+    pmsl = pmsl.metpy.convert_units('hPa').metpy.dequantify()
+    plevs = dset_city['t'].metpy.vertical.metpy.convert_units('hPa').metpy.dequantify()
 
     rain_acc = dset_city['RAIN_GSP']
     snow_acc = dset_city['SNOW_GSP']
-    rain = rain_acc.differentiate(coord="time", datetime_unit="h")
-    snow = snow_acc.differentiate(coord="time", datetime_unit="h")
+    rain = rain_acc.differentiate(coord="time_fine", datetime_unit="h")
+    snow = snow_acc.differentiate(coord="time_fine", datetime_unit="h")
 
-    weather_icons = get_weather_icons(dset_hourly['WW'], time_hourly)
+    weather_icons = get_weather_icons(dset_city['WW'], time_hourly)
 
     fig = plt.figure(figsize=(10, 12))
     gs = gridspec.GridSpec(4, 1, height_ratios=[3, 1, 1, 1])
 
     ax0 = plt.subplot(gs[0])
-    cs = ax0.contourf(pd.to_datetime(dset_hourly.time.values), plevs, t.T, extend='both',
-                      cmap=get_colormap("temp"), levels=np.arange(-70, 35, 2.5))
+    cs = ax0.contourf(pd.to_datetime(dset_city.time.values), plevs, t.T, extend='both',
+                      cmap=get_colormap("temp"), levels=np.arange(-70, 40, 2.5))
     ax0.axes.get_xaxis().set_ticklabels([])
     ax0.invert_yaxis()
     ax0.set_ylim(1000, 200)
@@ -81,9 +81,8 @@ def plot(dset_city):
     cbar_ax = fig.add_axes([0.92, 0.55, 0.02, 0.3])
     cs2 = ax0.contour(time_hourly, plevs, rh.T,
                       levels=np.linspace(0, 100, 5), colors='white', alpha=0.7)
-
-    dset_winds = dset_hourly.sel(time=pd.date_range(
-        dset_hourly.time[0].values, dset_hourly.time[-1].values, freq='3H'))
+    dset_winds = dset_city.sel(time=pd.date_range(
+        dset_city.time[0].values, dset_city.time[-1].values, freq='3H'))
     v = ax0.barbs(pd.to_datetime(dset_winds.time.values),
                   plevs, dset_winds['u'].T, dset_winds['v'].T,
                   alpha=0.3, length=5.5)
@@ -91,7 +90,7 @@ def plot(dset_city):
     ax0.grid(True, alpha=0.5)
     _ = annotation_run(ax0, run)
     _ = annotation(ax0, 'RH, $T$ and winds @(%3.1fN, %3.1fE, %d m)' %
-                                     (dset_hourly.lat, dset_hourly.lon, dset_hourly.HSURF),
+                                     (dset_city.lat, dset_city.lon, dset_city.HSURF),
                         loc='upper left')
     _ = annotation(ax0, city, loc='upper center')
 

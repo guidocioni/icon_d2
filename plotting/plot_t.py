@@ -38,7 +38,7 @@ def main():
 
     for level in levels:    
         dset_level = dset.sel(plev=level*100., method='nearest')
-        dset_level.t.metpy.convert_units('degC')
+        dset_level.t =         dset_level.t.metpy.convert_units('degC').metpy.dequantify()
         levels_gph = np.arange(np.nanmin(dset_level.geop).astype("int"),
                                 np.nanmax(dset_level.geop).astype("int"), 25.)
         levels_temp = np.arange(np.nanmin(dset_level.t).astype("int"), 

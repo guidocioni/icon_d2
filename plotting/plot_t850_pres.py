@@ -29,8 +29,8 @@ def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
     dset = read_dataset(variables=['t', 'pmsl'], level=85000, projection=projection)
-    dset.t.metpy.convert_units('degC')
-    dset.prmsl.metpy.convert_units('hPa')
+    dset['t'] = dset['t'].metpy.convert_units('degC').metpy.dequantify()
+    dset['prmsl'] = dset['prmsl'].metpy.convert_units('hPa').metpy.dequantify()
 
     levels_temp = np.arange(-25., 25., 1.)
     cmap = get_colormap('temp')
