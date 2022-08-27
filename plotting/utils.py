@@ -34,7 +34,7 @@ else:
     folder = '/home/ekman/ssd/guido/icon-d2/'
 folder_images = folder
 chunks_size = 10
-processes = 9
+processes = 6
 figsize_x = 11
 figsize_y = 9
 invariant_file = folder+'hsurf_*.nc'
@@ -222,9 +222,9 @@ def read_dataset(variables = ['T_2M', 'TD_2M'], level=None, projection=None,
     dset['run'] = run
 
     # chunk now based on the dimension of the dataset after the subsetting
-    # dset = dset.chunk({'time': round(len(dset.time) / 10),
-    #                    'lat': round(len(dset.lat) / 4),
-    #                    'lon': round(len(dset.lon) / 4)})
+    dset = dset.chunk({'time': round(len(dset.time) / 10),
+                       'lat': round(len(dset.lat) / 4),
+                       'lon': round(len(dset.lon) / 4)})
 
     return dset
 
