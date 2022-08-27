@@ -40,6 +40,8 @@ def main():
 
     ax  = plt.gca()
     m, x, y = get_projection(dset, projection, labels=True)
+    
+    dset = dset.load()
 
     # All the arguments that need to be passed to the plotting function
     args=dict(x=x, y=y, ax=ax, cmap=cmap,
