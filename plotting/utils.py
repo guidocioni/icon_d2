@@ -34,7 +34,7 @@ else:
     folder = '/home/ekman/ssd/guido/icon-d2/'
 folder_images = folder
 chunks_size = 10
-processes = 6
+processes = 4
 figsize_x = 11
 figsize_y = 9
 invariant_file = folder+'hsurf_*.nc'
