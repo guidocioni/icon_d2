@@ -65,7 +65,7 @@ if [ "$DATA_DOWNLOAD" = true ]; then
 	variables=("t_2m" "td_2m" "u_10m" "v_10m" "pmsl" "cape_ml" "vmax_10m" "tot_prec" \
 	"clcl" "clch" "clct" "snowlmt" "hzerocl" "h_snow" "snow_gsp" "grau_gsp" \
 	"rain_gsp" "tmax_2m" "tmin_2m" "ww" "dbz_cmax" "cin_ml" "relhum_2m" "synmsg_bt_cl_ir10.8")
-	parallel -j 8 --delay 1 download_merge_2d_variable_icon_d2 ::: "${variables[@]}"
+	parallel -j 6 --delay 1 download_merge_2d_variable_icon_d2 ::: "${variables[@]}"
 
 	#3-D variables on pressure levels
 	variables=("t" "fi" "relhum" "u" "v")
@@ -95,7 +95,7 @@ if [ "$DATA_PLOTTING" = true ]; then
 
 	projections=("de" "it" "nord")
 
-	parallel -j 4 --delay 1 python ::: "${scripts[@]}" ::: "${projections[@]}"
+	parallel -j 3 --delay 1 python ::: "${scripts[@]}" ::: "${projections[@]}"
 	rm ${MODEL_DATA_FOLDER}*.py
 fi
 
@@ -146,7 +146,6 @@ if [ "$DATA_UPLOAD" = true ]; then
 	#for k in "${upload_elements[@]}"; do
 	#	ncftpput -R -v -DD -m ${NCFTP_BOOKMARK} ${k}
 	#done
-	# parallel -j 5 --colsep ' ' ncftpput -R -v -DD -m ${NCFTP_BOOKMARK} ::: "${upload_elements[@]}"
 	num_procs=5
 	num_iters=${#upload_elements[@]}
 	num_jobs="\j"  # The prompt escape for number of jobs currently running
