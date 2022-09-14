@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
@@ -9,7 +10,6 @@ if not debug:
     import matplotlib
     matplotlib.use('Agg')
 
-import matplotlib.pyplot as plt
 
 # The one employed for the figure name when exported
 variable_name = 'cape_cin'
@@ -31,11 +31,13 @@ def main():
                         projection=projection,
                         level=85000)
 
-    dset['CAPE_ML'] = dset['CAPE_ML'].where(dset['CAPE_ML'] >= 250)
-    dset['CIN_ML'] = dset['CIN_ML'].where(((dset['CIN_ML'] < 0) & (dset['CIN_ML'] > -150)))
+    dset['CAPE_ML'] = dset['CAPE_ML'].where(dset['CAPE_ML'] >= 100)
+    # dset['CIN_ML'] = dset['CIN_ML'].where(
+    #     ((dset['CIN_ML'] < 0) & (dset['CIN_ML'] > -150)))
 
-    levels_cape = np.arange(250., 5000., 50.)
-    cmap = get_colormap("winds")
+    levels_cape = np.concatenate([np.arange(0., 3000., 100.),
+                                 np.arange(3000., 7000., 200.)])
+    cmap, norm = get_colormap_norm('cape_wxcharts', levels=levels_cape)
 
     # initialize figure
     _ = plt.figure(figsize=(figsize_x, figsize_y))
@@ -43,13 +45,13 @@ def main():
     # Get coordinates from dataset
     m, x, y = get_projection(dset, projection, labels=True)
     # additional maps adjustment for this map
-    m.fillcontinents(color='lightgray', lake_color='whitesmoke', zorder=0)
+    m.arcgisimage(service='World_Shaded_Relief', xpixels=1500)
 
     dset = dset.drop(['lon', 'lat']).load()
 
     # All the arguments that need to be passed to the plotting function
     # we pass only arrays to avoid the pickle problem when unpacking in multiprocessing
-    args = dict(x=x, y=y, ax=ax, cmap=cmap,
+    args = dict(x=x, y=y, ax=ax, cmap=cmap, norm=norm,
                 levels_cape=levels_cape)
 
     print_message('Pre-processing finished, launching plotting scripts')
@@ -69,7 +71,8 @@ def plot_files(dss, **args):
         data = dss.sel(time=time_sel)
         time, run, cum_hour = get_time_run_cum(data)
         # Build the name of the output image
-        filename = subfolder_images[projection] + '/' + variable_name + '_%s.png' % cum_hour
+        filename = subfolder_images[projection] + \
+            '/' + variable_name + '_%s.png' % cum_hour
 
         cs = args['ax'].contourf(args['x'], args['y'],
                                  data['CAPE_ML'],
@@ -79,9 +82,9 @@ def plot_files(dss, **args):
         cr = args['ax'].contourf(args['x'], args['y'],
                                  data['CIN_ML'],
                                  colors='none',
-                                 levels=(-100., -50.),
-                                 hatches=['...', '...'])
-
+                                 levels=(50, 100.),
+                                 hatches=['...', '...'],
+                                 zorder=5)
 
         density = 15
         cv = args['ax'].quiver(args['x'][::density, ::density],
@@ -93,26 +96,29 @@ def plot_files(dss, **args):
 
         an_fc = annotation_forecast(args['ax'], time)
         an_var = annotation(args['ax'], 'CAPE and Winds@850 hPa, hatches CIN$<-50$ J/kg',
-            loc='lower left', fontsize=6)
+                            loc='lower left', fontsize=6)
         an_run = annotation_run(args['ax'], run)
         logo = add_logo_on_map(ax=args['ax'],
-                                zoom=0.1, pos=(0.95, 0.08))
+                               zoom=0.1, pos=(0.95, 0.08))
 
         if first:
-            plt.colorbar(cs, orientation='horizontal', label='CAPE [J/kg]', pad=0.04, fraction=0.04)
+            plt.colorbar(cs, orientation='horizontal',
+                         label='CAPE [J/kg]', pad=0.04, fraction=0.04)
 
         if debug:
             plt.show(block=True)
         else:
-            plt.savefig(filename, **options_savefig)        
+            plt.savefig(filename, **options_savefig)
 
         remove_collections([cs, an_fc, an_var, an_run, cv, cr, logo])
 
-        first = False 
+        first = False
+
 
 if __name__ == "__main__":
     import time
-    start_time=time.time()
+    start_time = time.time()
     main()
-    elapsed_time=time.time()-start_time
-    print_message("script took " + time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
+    elapsed_time = time.time()-start_time
+    print_message("script took " + time.strftime("%H:%M:%S",
+                  time.gmtime(elapsed_time)))
