@@ -36,9 +36,8 @@ def main():
     dset['VMAX_10M'] = dset['VMAX_10M'].metpy.convert_units('kph').metpy.dequantify()
     dset['prmsl'] = dset['prmsl'].metpy.convert_units('hPa').metpy.dequantify()
 
-    levels_winds_10m = np.arange(20., 150., 5.)
-
-    cmap = get_colormap("winds")
+    levels_winds_10m = np.linspace(0, 255., 178)
+    cmap, norm = get_colormap_norm('winds_wxcharts', levels=levels_winds_10m)
 
     _ = plt.figure(figsize=(figsize_x, figsize_y))
 
@@ -56,7 +55,7 @@ def main():
     args=dict(x=x, y=y, ax=ax,
              levels_winds_10m=levels_winds_10m,
              levels_mslp=levels_mslp, time=dset.time,
-             cmap=cmap)
+             cmap=cmap, norm=norm)
 
 
     print_message('Pre-processing finished, launching plotting scripts')
@@ -80,7 +79,7 @@ def plot_files(dss, **args):
         filename = subfolder_images[projection] + '/' + variable_name + '_%s.png' % cum_hour
 
         cs = args['ax'].contourf(args['x'], args['y'], data['VMAX_10M'],
-                         extend='max', cmap=args['cmap'], levels=args['levels_winds_10m'])
+                         extend='max', cmap=args['cmap'], norm=args['norm'], levels=args['levels_winds_10m'])
 
         c = args['ax'].contour(args['x'], args['y'], data['prmsl'],
                              levels=args['levels_mslp'], colors='red', linewidths=1.)
@@ -111,7 +110,7 @@ def plot_files(dss, **args):
                                 zoom=0.1, pos=(0.95, 0.08))
 
         if first:
-            plt.colorbar(cs, orientation='horizontal', label='Wind [km/h]', pad=0.03, fraction=0.03)
+            plt.colorbar(cs, orientation='horizontal', label='Wind [km/h]', pad=0.03, fraction=0.035)
         
         if debug:
             plt.show(block=True)
