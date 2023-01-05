@@ -1,7 +1,7 @@
 import metpy.calc as mpcalc
 import xarray as xr
 from metpy.units import units
-from utils import *
+import utils
 
 
 def compute_convergence(dset, uvar='10u', vvar='10v'):
@@ -129,8 +129,8 @@ def compute_rate(dset):
 
 
 def compute_soil_moisture_sat(dset, projection):
-    proj_options = proj_defs[projection]
-    saturation = xr.open_dataset(soil_saturation_file)['soil_saturation']
+    proj_options = utils.proj_defs[projection]
+    saturation = xr.open_dataset(utils.soil_saturation_file)['soil_saturation']
     saturation = saturation.assign_coords({"lon": (((saturation.lon + 180) % 360) - 180)})
     saturation = saturation.sel(lat=slice(proj_options['llcrnrlat'],
                                           proj_options['urcrnrlat']),

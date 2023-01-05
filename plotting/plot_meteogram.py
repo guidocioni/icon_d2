@@ -6,30 +6,30 @@ from glob import glob
 import numpy as np
 import pandas as pd
 import os
-from utils import *
+import utils*
 import sys
 import matplotlib.dates as mdates
 from matplotlib.dates import DateFormatter
 from matplotlib import gridspec
-from matplotlib.offsetbox import AnnotationBbox, OffsetImage
+from matplotlib.offsetbox import utils.annotationBbox, OffsetImage
 from tqdm.contrib.concurrent import process_map
 import time
 import sys
 
 
-print_message('Starting script to plot meteograms')
+utils.print_message('Starting script to plot meteograms')
 
 if not sys.argv[1:]:
-    print_message('City not defined, falling back to default (Hamburg)')
+    utils.print_message('City not defined, falling back to default (Hamburg)')
     cities = ['Hamburg']
 else:
     cities = sys.argv[1:]
 
 
 def main():
-    dset = read_dataset(variables=['t_2m', 'td_2m', 't', 'vmax_10m',
+    dset = utils.read_dataset(variables=['t_2m', 'td_2m', 't', 'vmax_10m',
                                     'pmsl', 'HSURF', 'ww', 'relhum', 'u', 'v', 'clc'])
-    dset_prec = read_dataset(variables=['rain_gsp', 'rain_con', 'snow_gsp', 'snow_con',], freq=None).rename_dims({'time':'time_fine'}).rename({'time':'time_fine'})
+    dset_prec = utils.read_dataset(variables=['rain_gsp', 'rain_con', 'snow_gsp', 'snow_con',], freq=None).rename_dims({'time':'time_fine'}).rename({'time':'time_fine'})
     dset = dset.merge(dset_prec)
     # Subset dataset on cities and create iterator
     it = []
@@ -39,13 +39,13 @@ def main():
         d.attrs['city'] = city
         it.append(d)
         del d
-    process_map(plot, it, max_workers=processes, chunksize=2)
+    process_map(plot, it, max_workers=utils.processes, chunksize=2)
 
 
 def plot(dset_city):
     city = dset_city.attrs['city']
-    print_message('Producing meteogram for %s' % city)
-    time_hourly, run, cum_hour = get_time_run_cum(dset_city)
+    utils.print_message('Producing meteogram for %s' % city)
+    time_hourly, run, cum_hour = utils.get_time_run_cum(dset_city)
     time_prec = dset_city['time_fine'].to_pandas()
     t = dset_city['t'].load()
     t = t.metpy.convert_units('degC').metpy.dequantify()
@@ -88,11 +88,11 @@ def plot(dset_city):
                   alpha=0.3, length=5.5)
     ax0.xaxis.set_major_locator(mdates.HourLocator(interval=6))
     ax0.grid(True, alpha=0.5)
-    _ = annotation_run(ax0, run)
-    _ = annotation(ax0, 'RH, $T$ and winds @(%3.1fN, %3.1fE, %d m)' %
+    _ = utils.annotation_run(ax0, run)
+    _ = utils.annotation(ax0, 'RH, $T$ and winds @(%3.1fN, %3.1fE, %d m)' %
                                      (dset_city.lat, dset_city.lon, dset_city.HSURF),
                         loc='upper left')
-    _ = annotation(ax0, city, loc='upper center')
+    _ = utils.annotation(ax0, city, loc='upper center')
 
     ax1 = plt.subplot(gs[1])
     ax1.set_xlim(time_hourly[0], time_hourly[-1])
@@ -107,7 +107,7 @@ def plot(dset_city):
 
     for dt, weather_icon, dewp in zip(time_hourly, weather_icons, t2m):
         imagebox = OffsetImage(weather_icon, zoom=.025)
-        ab = AnnotationBbox(
+        ab = utils.annotationBbox(
             imagebox, (mdates.date2num(dt), dewp), frameon=False)
         ax1.add_artist(ab)
 
@@ -169,4 +169,4 @@ if __name__ == "__main__":
     start_time=time.time()
     main()
     elapsed_time=time.time()-start_time
-    print_message("script took " + time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
+    utils.print_message("script took " + time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))

@@ -18,6 +18,7 @@ from matplotlib.image import imread as read_png
 import requests
 import json
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 import warnings
 warnings.filterwarnings(
@@ -398,7 +399,7 @@ def annotation_forecast(ax, time, loc='upper left', fontsize=8, local=True):
     return(at)
 
 
-def add_logo_on_map(ax, logo=home_folder+'/plotting/meteoindiretta_logo.png', zoom=0.15, pos=(0.92, 0.1)):
+def add_logo_on_map(ax=home_folder+'/plotting/meteoindiretta_logo.png', zoom=0.15, pos=(0.92, 0.1)):
     '''Add a logo on the map given a pnd image, a zoom and a position
     relative to the axis ax.'''
     img_logo = OffsetImage(read_png(logo), zoom=zoom)
@@ -611,3 +612,26 @@ def add_vals_on_map(ax, projection, var, levels, density=50,
 
     return at
 
+
+def divide_axis_for_cbar(ax, width="45%", height="2%", pad=-2, adjust=0.05):
+    '''Using inset_axes, divides axis in two to place the colorbars side to side.
+    Note that we use the bbox explicitlly with padding to adjust the position of the colorbars
+    otherwise they'll come out of the axis (don't really know why)'''
+    ax_cbar = inset_axes(ax,
+                         width=width,
+                         height=height,
+                         loc='lower left',
+                         borderpad=pad,
+                         bbox_to_anchor=(adjust, 0., 1, 1),
+                         bbox_transform=ax.transAxes
+                         )
+    ax_cbar_2 = inset_axes(ax,
+                           width=width,
+                           height=height,
+                           loc='lower right',
+                           borderpad=pad,
+                           bbox_to_anchor=(-adjust, 0., 1, 1),
+                           bbox_transform=ax.transAxes
+                           )
+
+    return ax_cbar, ax_cbar_2
