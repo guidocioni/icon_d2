@@ -1,7 +1,7 @@
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-import utils*
+import utils
 import sys
 import metpy.calc as mpcalc
 
@@ -94,12 +94,12 @@ def plot_files(dss, **args):
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=6)
 
-        maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+        maxlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
                                         'max', 150, symbol='H', color='royalblue', random=True)
-        minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+        minlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
                                         'min', 150, symbol='L', color='coral', random=True)
 
-        an_fc = utils.utils.annotation_forecast(args['ax'], time)
+        an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'], 'Accumulated precipitation and MSLP [hPa]',
             loc='lower left', fontsize=6)
         an_run = utils.annotation_run(args['ax'], run)

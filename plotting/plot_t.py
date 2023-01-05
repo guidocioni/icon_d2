@@ -1,7 +1,7 @@
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-import utils*
+import utils
 import sys
 from computations import compute_geopot_height
 
@@ -34,7 +34,7 @@ def main():
     dset = utils.read_dataset(variables=['t', 'fi'], level=[l * 100 for l in levels],
                         projection=projection)
     dset = compute_geopot_height(dset)
-    cmap = get_colormap('temp')
+    cmap = utils.get_colormap('temp')
 
     for level in levels:    
         dset_level = dset.sel(plev=level*100., method='nearest')
@@ -84,12 +84,12 @@ def plot_files(dss, **args):
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=6)
 
-        maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
+        maxlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
                                        'max', 100, symbol='H', color='royalblue', random=True)
-        minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'], 
+        minlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'], 
                                        'min', 100, symbol='L', color='coral', random=True)
 
-        an_fc = utils.utils.annotation_forecast(args['ax'], time)
+        an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'], 'Temperature and Geopotential at '+str(args['level'])+' hPa' ,loc='lower left', fontsize=6)
         an_run = utils.annotation_run(args['ax'], run)
         

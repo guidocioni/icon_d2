@@ -6,12 +6,12 @@ from glob import glob
 import numpy as np
 import pandas as pd
 import os
-import utils*
+import utils
 import sys
 import matplotlib.dates as mdates
 from matplotlib.dates import DateFormatter
 from matplotlib import gridspec
-from matplotlib.offsetbox import utils.annotationBbox, OffsetImage
+from matplotlib.offsetbox import annotationBbox, OffsetImage
 from tqdm.contrib.concurrent import process_map
 import time
 import sys
@@ -65,14 +65,14 @@ def plot(dset_city):
     rain = rain_acc.differentiate(coord="time_fine", datetime_unit="h")
     snow = snow_acc.differentiate(coord="time_fine", datetime_unit="h")
 
-    weather_icons = get_weather_icons(dset_city['WW'], time_hourly)
+    weather_icons = utils.get_weather_icons(dset_city['WW'], time_hourly)
 
     fig = plt.figure(figsize=(10, 12))
     gs = gridspec.GridSpec(4, 1, height_ratios=[3, 1, 1, 1])
 
     ax0 = plt.subplot(gs[0])
     cs = ax0.contourf(pd.to_datetime(dset_city.time.values), plevs, t.T, extend='both',
-                      cmap=get_colormap("temp"), levels=np.arange(-70, 40, 2.5))
+                      cmap=utils.get_colormap("temp"), levels=np.arange(-70, 40, 2.5))
     ax0.axes.get_xaxis().set_ticklabels([])
     ax0.invert_yaxis()
     ax0.set_ylim(1000, 200)
@@ -160,7 +160,7 @@ def plot(dset_city):
                  label='Temperature [C]', cax=cbar_ax)
 
     # Build the name of the output image
-    filename = folder_images + '/meteogram_%s.png' % city
+    filename = utils.folder_images + '/meteogram_%s.png' % city
     plt.savefig(filename, dpi=100, bbox_inches='tight')
     plt.clf()
 

@@ -1,7 +1,7 @@
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-import utils*
+import utils
 import sys
 
 debug = False
@@ -33,7 +33,7 @@ def main():
     dset['prmsl'] = dset['prmsl'].metpy.convert_units('hPa').metpy.dequantify()
 
     levels_temp = np.arange(-25., 25., 1.)
-    cmap = get_colormap('temp')
+    cmap = utils.get_colormap('temp')
 
     fig = plt.figure(figsize=(utils.figsize_x, utils.figsize_y))
 
@@ -79,12 +79,12 @@ def plot_files(dss, **args):
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=6)
 
-        maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+        maxlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
                                        'max', 80, symbol='H', color='royalblue', random=True)
-        minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'], 
+        minlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'], 
                                        'min', 80, symbol='L', color='coral', random=True)
 
-        an_fc = utils.utils.annotation_forecast(args['ax'], time)
+        an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'], 'MSLP [hPa] and temperature @850hPa [C]',
                             loc='lower left', fontsize=6)
         an_run = utils.annotation_run(args['ax'], run)

@@ -1,7 +1,7 @@
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-import utils*
+import utils
 import sys
 
 debug = False
@@ -73,7 +73,7 @@ def plot_files(dss, **args):
                                     levels=args['levels_dbz'])
 
     
-        an_fc = utils.utils.annotation_forecast(args['ax'], time)
+        an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'], 'Radar reflectivity [dBz]' ,loc='lower left', fontsize=6)
         an_run = utils.annotation_run(args['ax'], run)
         

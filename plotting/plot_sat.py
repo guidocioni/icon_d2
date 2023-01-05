@@ -1,7 +1,7 @@
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-import utils*
+import utils
 import sys
 from computations import compute_rate
 import pickle
@@ -46,11 +46,11 @@ def main():
                     5, 7.5, 10., 15.)
     levels_clouds = np.arange(30, 100, 1)
 
-    cmap_snow, norm_snow = get_colormap_norm("snow", levels_snow)
-    cmap_rain, norm_rain = get_colormap_norm("rain_new", levels_rain)
+    cmap_snow, norm_snow = utils.get_colormap_norm("snow", levels_snow)
+    cmap_rain, norm_rain = utils.get_colormap_norm("rain_new", levels_rain)
     cmap_clouds = utils.truncate_colormap(plt.get_cmap('Greys'), 0., 0.5)
     cmap_clouds_high = utils.truncate_colormap(plt.get_cmap('Oranges'), 0., 0.5)
-    fp = open(home_folder + '/plotting/cmap_bt.pkl', 'rb')
+    fp = open(utils.home_folder + '/plotting/cmap_bt.pkl', 'rb')
     cmap_bt = pickle.load(fp)
     fp.close()
 
@@ -113,7 +113,7 @@ def plot_files(dss, **args):
         # minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
         #                                 'min', 150, symbol='L', color='coral', random=True)
         
-        an_fc = utils.utils.annotation_forecast(args['ax'], time)
+        an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'],
             'Satellite IR temperature',
             loc='lower left', fontsize=6)

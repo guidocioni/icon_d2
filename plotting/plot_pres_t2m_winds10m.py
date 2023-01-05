@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-import utils*
+import utils
 import sys
 import metpy.calc as mpcalc
 
@@ -100,9 +100,9 @@ def plot_files(dss, **args):
         labels2 = args['ax'].clabel(
             cs2, cs2.levels, inline=True, fmt='%2.0f', fontsize=7)
 
-        maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+        maxlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
                                        'max', 170, symbol='H', color='royalblue', random=True)
-        minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+        minlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
                                        'min', 170, symbol='L', color='coral', random=True)
 
         # We need to reduce the number of points before plotting the vectors,
@@ -115,7 +115,7 @@ def plot_files(dss, **args):
                                scale=None,
                                alpha=0.8, color='gray')
 
-        an_fc = utils.utils.annotation_forecast(args['ax'], time)
+        an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'],
                             'MSLP [hPa], Winds@10m and Temperature@2m', loc='lower left', fontsize=6)
         an_run = utils.annotation_run(args['ax'], run)

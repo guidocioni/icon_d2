@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-import utils*
+import utils
 import sys
 from computations import compute_geopot_height
 from matplotlib import patheffects
@@ -105,12 +105,12 @@ def plot_files(dss, **args):
         plt.setp(labels2, path_effects=[
             patheffects.withStroke(linewidth=0.5, foreground="w")])
 
-        maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
+        maxlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
                                        'max', 100, symbol='H', color='royalblue', random=True)
-        minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
+        minlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
                                        'min', 100, symbol='L', color='coral', random=True)
 
-        an_fc = utils.utils.annotation_forecast(args['ax'], time)
+        an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'],
                             'Geopotential height @500hPa [m] and temperature @500hPa',
                             loc='lower left', fontsize=6)

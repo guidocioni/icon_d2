@@ -1,7 +1,7 @@
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-import utils*
+import utils
 import sys
 
 debug = False
@@ -34,7 +34,7 @@ def main():
 
     levels_t2m = np.arange(-25, 50, 1)
 
-    cmap = get_colormap("temp")
+    cmap = utils.get_colormap("temp")
 
     _ = plt.figure(figsize=(utils.figsize_x, utils.figsize_y))
 
@@ -88,7 +88,7 @@ def plot_files(dss, **args):
                                cmap=args['cmap'],
                                density=density)
 
-        an_fc = utils.utils.annotation_forecast(args['ax'], time)
+        an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'], 'Maximum 2m Temperature in previous 6 hours',
                             loc='lower left', fontsize=6)
         an_run = utils.annotation_run(args['ax'], run)

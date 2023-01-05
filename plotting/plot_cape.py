@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-import utils*
+import utils
 import sys
 
 debug = False
@@ -94,7 +94,7 @@ def plot_files(dss, **args):
                                scale=None,
                                alpha=0.8, color='gray')
 
-        an_fc = utils.utils.annotation_forecast(args['ax'], time)
+        an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'], 'CAPE and Winds@850 hPa, hatches CIN$<-50$ J/kg',
                             loc='lower left', fontsize=6)
         an_run = utils.annotation_run(args['ax'], run)

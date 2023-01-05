@@ -1,7 +1,7 @@
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-import utils*
+import utils
 import sys
 
 debug = False
@@ -42,7 +42,7 @@ def main():
     dset = dset.resample(time="24H",
                          base=dset.time[0].dt.hour.item()).nearest().diff(dim='time')
 
-    cmap, norm = get_colormap_norm('rain_acc_wxcharts', levels=levels_precip)
+    cmap, norm = utils.get_colormap_norm('rain_acc_wxcharts', levels=levels_precip)
 
     _ = plt.figure(figsize=(utils.figsize_x, utils.figsize_y))
     ax  = plt.gca()
@@ -85,7 +85,7 @@ def plot_files(dss, **args):
                                  levels=args['levels_precip'])
 
 
-        an_fc = utils.utils.annotation_forecast(args['ax'], time)
+        an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'], 'Accumulated precipitation in the last 24 hours',
             loc='lower left', fontsize=6)
         an_run = utils.annotation_run(args['ax'], run)

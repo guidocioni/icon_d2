@@ -109,7 +109,7 @@ def plot_files(dss, **args):
         labels = args['ax'].clabel(
             c, c.levels, inline=True, fmt='%4.0f', fontsize=5)
 
-        an_fc = utils.utils.annotation_forecast(args['ax'], time)
+        an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'],
                                   'Snow depth change [cm] since run beginning and snow limit [m]',
                                   loc='lower left', fontsize=6)

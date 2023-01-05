@@ -1,7 +1,7 @@
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-import utils*
+import utils
 import sys
 from computations import compute_geopot_height
 import metpy.calc as mpcalc
@@ -13,7 +13,7 @@ if not debug:
 
 import matplotlib.pyplot as plt
 
-# The one employed for the figure name when exported 
+# The one employed for the figure name when exported
 variable_name = 'gph_500_mslp'
 
 utils.print_message('Starting script to plot '+variable_name)
@@ -94,12 +94,12 @@ def plot_files(dss, **args):
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f', 
                                    fontsize=6)
 
-        maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+        maxlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
                                         'max', 100, symbol='H', color='royalblue', random=True)
-        minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+        minlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
                                         'min', 100, symbol='L', color='coral', random=True)
 
-        an_fc = utils.utils.annotation_forecast(args['ax'], time)
+        an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'], 
             'Geopotential height @500hPa [m] and MSLP (hPa)',
              loc='lower left', fontsize=6)
