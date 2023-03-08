@@ -37,7 +37,7 @@ def main():
 
     levels_cape = np.concatenate([np.arange(0., 3000., 100.),
                                  np.arange(3000., 7000., 200.)])
-    cmap, norm = get_colormap_norm('cape_wxcharts', levels=levels_cape)
+    cmap, norm = utils.get_colormap_norm('cape_wxcharts', levels=levels_cape)
 
     # initialize figure
     _ = plt.figure(figsize=(utils.figsize_x, utils.figsize_y))

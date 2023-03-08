@@ -40,7 +40,7 @@ def main():
     levels_temp = np.arange(-34., 36., 2.)
     levels_gph = np.arange(4700., 6000., 50.)
 
-    cmap = get_colormap('temp_meteociel')
+    cmap = utils.get_colormap('temp_meteociel')
 
     _ = plt.figure(figsize=(utils.figsize_x, utils.figsize_y))
 

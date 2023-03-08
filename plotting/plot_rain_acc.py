@@ -41,7 +41,7 @@ def main():
                     list(np.arange(501, 1000, 50)) + \
                     list(np.arange(1001, 2000, 100))
 
-    cmap, norm = get_colormap_norm('rain_acc_wxcharts', levels=levels_precip)
+    cmap, norm = utils.get_colormap_norm('rain_acc_wxcharts', levels=levels_precip)
 
     _ = plt.figure(figsize=(utils.figsize_x, utils.figsize_y))
     ax  = plt.gca()

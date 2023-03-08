@@ -38,7 +38,7 @@ def main():
 
     levels_t2m = np.arange(-25, 45, 1)
 
-    cmap = get_colormap("temp")
+    cmap = utils.get_colormap("temp")
     _ = plt.figure(figsize=(utils.figsize_x, utils.figsize_y))
 
     ax = plt.gca()

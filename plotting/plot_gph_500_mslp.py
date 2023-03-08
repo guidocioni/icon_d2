@@ -39,7 +39,7 @@ def main():
 
     levels_gph = np.arange(5000., 6000., 40.)
 
-    cmap = get_colormap('gph')
+    cmap = utils.get_colormap('gph')
     #cmap = utils.truncate_colormap(cmap, 0.05, 0.9)
 
     _ = plt.figure(figsize=(utils.figsize_x, utils.figsize_y))

@@ -34,7 +34,7 @@ def main():
     dset = utils.read_dataset(variables=['relhum', 'fi'], level=[l * 100 for l in levels],
                         projection=projection)
     dset = compute_geopot_height(dset)
-    cmap = get_colormap('rh')
+    cmap = utils.get_colormap('rh')
     levels_rh = np.arange(10, 100, 5)
 
     for level in levels:    

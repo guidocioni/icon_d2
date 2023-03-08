@@ -75,11 +75,11 @@ def plot_files(dss, **args):
 
         # plot every -th element
         if projection=="nord":
-            density = 10
+            density = 9
         elif projection=="it":
-            density = 12
+            density = 11
         elif projection=="de":
-            density = 16
+            density = 15
         vals = utils.add_vals_on_map(args['ax'], projection,
                                data['TMIN_2M'], args['levels_t2m'],
                                cmap=args['cmap'],
